@@ -147,6 +147,8 @@ def compute_rotation_matrix(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
     Args:
         X (torch.Tensor): Input vector of shape (d,)
         Y (torch.Tensor): Target vector of shape (d,)
+    Pre-cond:
+        norm(X) = norm(Y)
     Returns:
         W (torch.Tensor): Rotation matrix of shape (d, d)
     """
