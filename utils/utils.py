@@ -25,7 +25,6 @@ def weight_init(m):
         nn.init.constant_(m.bias, 0)
 
 
-
 def analyse_attn_matrix(matrix, av_dim):
     # print(matrix.shape)
     avg_AA = torch.mean(matrix[1:av_dim, 1:av_dim])
@@ -150,22 +149,6 @@ def compute_rotation_matrix(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         Y (torch.Tensor): Target vector of shape (d,)
     Returns:
         W (torch.Tensor): Rotation matrix of shape (d, d)
-
-    # Example usage
-    d = 512  # Dimensionality of the vectors
-    X = torch.randn(d)
-    Y = torch.randn(d)
-
-    # Ensure they have the same norm
-    Y = Y * (X.norm(p=2) / Y.norm(p=2))
-
-    # Compute the rotation matrix
-    W = compute_exact_rotation_matrix(X, Y)
-
-    # Verify the result
-    print("Y (original):\n", Y[:10])  # Print first 10 elements for brevity
-    print("WX (transformed):\n", (W @ X)[:10])  # Print first 10 elements for brevity
-    print("Error:", (Y - W @ X).norm(p=2))  # Should be close to zero
     """
     # Ensure vectors are normalized
     X = X / X.norm(p=2)

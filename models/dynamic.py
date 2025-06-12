@@ -11,14 +11,11 @@ class AttnFusion(nn.Module):
         super(AttnFusion, self).__init__()
         print('Using Fusion Head: AttnFusion')
         self.embed_dim = embed_dim
-        # self.norm = nn.LayerNorm(embed_dim, eps=1e-6)
         self.attn = MultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads, dropout=0.2)
         self.FC = nn.Linear(embed_dim, output_dim)
 
-        # self.register_buffer('affine', None)
         self.register_parameter('affine', nn.Parameter(torch.eye(self.embed_dim), requires_grad=False))
         self.r_time = 0
-        # self.register_buffer('affine', nn.Parameter(torch.zeros(self.embed_dim, self.embed_dim)))
 
         self._cls_token()
 
@@ -62,7 +59,6 @@ class AttnFusion(nn.Module):
         cls_tokens = self.cls_token.expand(bs, -1, -1)
 
         seq = torch.cat([cls_tokens, x ,y], dim=1)
-        # seq = self.norm(seq)
         
         if self.r_time > 0:
             print('Using Affine')
@@ -74,7 +70,6 @@ class AttnFusion(nn.Module):
         out = self.FC(cls_embed)
 
         return x, y, [out, attn_matrix, infos]
-        # return x, y, [out, attn_matrix]
     
 
 from .mbt_backbone import Mlp
@@ -98,18 +93,11 @@ class MyBlock(nn.Module):
 
     def forward(self, x):
         norm_seq = self.norm1(x)
-        # print(self.norm1)
-        # print(torch.mean(norm_seq, dim = 2))
         out, attn_matrix, info = self.attn(norm_seq, norm_seq, norm_seq)
         x = x + out # residual connect
 
         norm_seq = self.norm2(x)
         x = x + self.mlp(norm_seq)
-        # norm_seq = self.norm1(x)
-        # out, attn_matrix, info = self.attn(norm_seq, norm_seq, norm_seq)
-        # seq = x + out
-        # norm_seq = self.norm2(seq)
-        # x = x + self.mlp(x)
 
         return x, attn_matrix, info
 
@@ -129,9 +117,6 @@ class ScaledDotProductAttention(nn.Module):
     def forward(self, q, k, v, mask=None):
         # [B, heads, L, edim]
         attn = torch.matmul(q / self.temperature, k.transpose(2, 3))
-
-        # For monitor
-        # print("qk^T", attn[0, 0, 0, :].shape, attn[0, 0, 0, :])
 
         if mask is not None:
             attn = attn.masked_fill(mask == 0, -1e9)
@@ -177,7 +162,6 @@ class MultiHeadAttention(nn.Module):
 
 
     def forward(self, q, k, v, mask=None, affine=None):
-        # print('MHA forward')
         d_k, d_v, n_head = self.d_k, self.d_v, self.n_head
         sz_b, len_q, len_k, len_v = q.size(0), q.size(1), k.size(1), v.size(1)
 
@@ -203,29 +187,19 @@ class MultiHeadAttention(nn.Module):
             mask = mask.unsqueeze(1)   # For head axis broadcasting.
 
         out, attn = self.attention(q, k, v, mask=mask)
-        # print(attn.shape)
-        # attn = torch.mean(attn, dim=1)
         if self.n_head == 1:
             attn = attn.squeeze(2)
-
-        # print("attn inside: ", attn[0, 0, :])
-        # print("", torch.sum(attn[0, 0, :177]))
-        # print("", torch.sum(attn[0, 0, 177:]))
-
+        
         # Transpose to move the head dimension back: b x lq x n x dv
         # Combine the last two dimensions to concatenate all the heads together: b x lq x (n*dv)
         out = out.transpose(1, 2).contiguous().view(sz_b, len_q, -1)
         out = self.dropout(self.fc(out))
-        # out += residual
 
-        # out = self.layer_norm(out)
-        # print(torch.mean(attn, dim=0)[0])
         infos = {
             'q': qn,
             'k': kn,
             'v': vn
         }
-        # print('info:', infos)
 
         return out, attn, infos
 

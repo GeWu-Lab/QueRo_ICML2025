@@ -25,7 +25,6 @@ class CramedDataset(Dataset):
 
         self.visual_feature_path = '/home/haotian_ni/CREMA-D'
         self.audio_feature_path  = '/home/haotian_ni/CREMA-D/AudioWAV'
-        # In this case, I download directly from github repo with git-lfs
 
         self.train_csv = os.path.join(self.data_root, args.dataset + '/train.csv')
         self.test_csv  = os.path.join(self.data_root, args.dataset + '/test.csv')
@@ -40,8 +39,6 @@ class CramedDataset(Dataset):
             for item in csv_reader:
                 audio_path = os.path.join(self.audio_feature_path, item[0] + '.wav')
                 visual_path = os.path.join(self.visual_feature_path, 'Image-{:02d}-FPS'.format(self.args.fps), item[0])
-                # visual_path = os.path.join(self.visual_feature_path, 'Image-10-FPS'.format(self.args.fps), item[0])
-                # print(visual_path)
                 if os.path.exists(audio_path) and os.path.exists(visual_path):
                     self.image.append(visual_path)
                     self.audio.append(audio_path)
@@ -55,40 +52,17 @@ class CramedDataset(Dataset):
                     continue
             print('sample_num: ', len(self.label))
         
-        # self.replace = True
-        self.replace = False
-        if self.replace:
-            print("DANGEROUS!!! 50% replace a by noise")
-            print('Generating noise samples...')
-            keys = np.random.choice(np.arange(0, len(self.label)), size=len(self.label) // 2, replace=False)
-            self.replace_dict = {key : -7 + 5 * np.random.normal(size=(257, 188)) for key in keys}
-            # self.replace_dict = {key :np.random.normal(size=(257, 188)) for key in keys}
-        print('Done.')
-
-
     def __len__(self):
         return len(self.image)
 
     def __getitem__(self, idx):
+        samples, rate = librosa.load(self.audio[idx], sr=22050)
+        resamples = np.tile(samples, 3)[:22050*3]
+        resamples[resamples > 1.] = 1.
+        resamples[resamples < -1.] = -1.
 
-        # audio
-        if self.replace and idx in self.replace_dict:
-            print('replace')
-            spectrogram = self.replace_dict[idx]
-        else:
-            # print('No replace')
-            samples, rate = librosa.load(self.audio[idx], sr=22050)
-            resamples = np.tile(samples, 3)[:22050*3]
-            resamples[resamples > 1.] = 1.
-            resamples[resamples < -1.] = -1.
-
-            spectrogram = librosa.stft(resamples, n_fft=512, hop_length=353)
-            spectrogram = np.log(np.abs(spectrogram) + 1e-7)
-            # mean = np.mean(spectrogram)
-            # std = np.std(spectrogram)
-            # print('mean & std', mean, std)
-            #spectrogram = np.divide(spectrogram - mean, std + 1e-9)
-
+        spectrogram = librosa.stft(resamples, n_fft=512, hop_length=353)
+        spectrogram = np.log(np.abs(spectrogram) + 1e-7)
 
         if self.mode == 'train':
             transform = transforms.Compose([
@@ -106,9 +80,7 @@ class CramedDataset(Dataset):
 
         # Visual
         image_samples = os.listdir(self.image[idx])
-        # pick_num = self.args.fps
         pick_num = self.args.use_video_frames
-        # select_index = np.random.choice(len(image_samples), size=pick_num, replace=False)
         select_index = np.random.choice(len(image_samples), size=pick_num, replace=True)
         select_index.sort()
 
@@ -118,12 +90,10 @@ class CramedDataset(Dataset):
             img = transform(img)
             images[i] = img
 
-        # images = torch.permute(images, (1,0,2,3))
         '''
             ORIGINAL ERROR
         '''
         images = images.permute((1,0,2,3)) # (C, T, H, W)
-        # print(images.shape)
 
         # label
         label = self.label[idx]

@@ -6,9 +6,7 @@ import copy
 import numpy as np
 import torch
 import torch.nn.functional
-import torchaudio
 from PIL import Image
-from scipy import signal
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -43,7 +41,6 @@ class KS_dataset(Dataset): # 147
         self.data = []
         self.label = []
         self.test_noise = test_noise
-        # for 147
         if mode=='train':
             csv_path = '/data/users/yake_wei/KS_2023/ks_train_overlap.txt'
             self.audio_path = '/data/users/yake_wei/KS_2023/train_spec'
@@ -56,20 +53,6 @@ class KS_dataset(Dataset): # 147
             csv_path = '/data/users/yake_wei/KS_2023/ks_test_overlap.txt'
             self.audio_path = '/data/users/yake_wei/KS_2023/test_spec'
             self.visual_path = '/data/users/yake_wei/KS_2023/val-frames-1fps/test'
-
-        # # for 165
-        # if mode=='train':
-        #     csv_path = '/data/users/zequn_yang/KS/ks_train_overlap.txt'
-        #     self.audio_path = '/data/users/zequn_yang/KS/train_spec'
-        #     self.visual_path = '/data/users/zequn_yang/KS/train-frames-1fps/train'
-        # elif mode=='val':
-        #     csv_path = '/data/users/zequn_yang/KS/ks_test_overlap.txt'
-        #     self.audio_path = '/data/users/zequn_yang/KS/test_spec'
-        #     self.visual_path = '/data/users/zequn_yang/KS/val-frames-1fps/test'
-        # else:
-        #     csv_path = '/data/users/zequn_yang/KS/ks_test_overlap.txt'
-        #     self.audio_path = '/data/users/zequn_yang/KS/test_spec'
-        #     self.visual_path = '/data/users/zequn_yang/KS/val-frames-1fps/test'
         
         with open(csv_path) as f:
             for line in f:
@@ -110,7 +93,6 @@ class KS_dataset(Dataset): # 147
         av_file = self.data[idx]
 
         spectrogram = np.load(self.audio_path + '/' + av_file + '.npy')
-        # spectrogram = np.expand_dims(spectrogram, axis=0)
         
         # Visual
         path = self.visual_path + '/' + av_file
@@ -157,17 +139,6 @@ class KS_dataset(Dataset): # 147
                 image_n = torch.cat((image_n, image_arr[i]), 1)
 
         label = self.label[idx]
-        # print(image_n.shape)
-        # sample = {
-        #     'audio':spectrogram,
-        #     'clip':image_n,
-        #     'target':label, 
-        #     'index' : idx
-        # # }
-
-        if self.test_noise > 0.0:
-            # print("noise_a")
-            spectrogram = self.apply_noise(spectrogram)
 
         return {
             'a': spectrogram, 
