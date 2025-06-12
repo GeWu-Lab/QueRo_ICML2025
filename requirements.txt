@@ -1,14 +1,10 @@
-conda create -n rollingQ python=3.10
-conda activate rollingQ
-pip install numpy==1.26.3
-pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
-pip install librosa
-pip install tensorboard
-pip install tqdm
-pip install timm==1.0.11
-pip install transformers==4.47.0
-pip install scikit-learn==1.5.2
-pip install matplotlib
-pip install seaborn
-pip install h5py
-pip install opencv-python
+numpy==1.26.3
+torch==1.13.1+cu116 
+torchvision==0.14.1+cu116 
+torchaudio==0.13.1
+librosa
+tensorboard
+timm==1.0.11
+transformers==4.47.0
+scikit-learn==1.5.2
+opencv-python
