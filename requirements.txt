@@ -1,0 +1,11 @@
+numpy==1.26.3
+torch==1.13.1+cu116
+torchvision==0.14.1+cu116
+torchaudio==0.13.1
+librosa
+tensorboard
+timm==1.0.11
+transformers==4.47.0
+scikit-learn==1.5.2
+opencv-python
+--extra-index-url https://download.pytorch.org/whl/cu116
