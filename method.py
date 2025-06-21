@@ -34,26 +34,15 @@ def set_rotary_matrix(args, model, AIR, device, dataloader):
             kv.append(batch_avg_kv)
             batch_avg_qcls = torch.mean(qcls.detach().clone(), dim=0) # 
             qcls_ls.append(batch_avg_qcls)
-            # break
 
         # Now Calculate Where it's
-        if len(ka) == 1:
-            src_ka = ka
-            src_kv = kv
-            query_ls = qcls_ls
-        else:
-            src_ka = torch.stack(ka, dim=0) # [batch_num, edim]
-            src_kv = torch.stack(kv, dim=0) # [batch_num, edim]
-            query_ls  = torch.stack(qcls_ls, dim=0)
+        src_ka = torch.stack(ka, dim=0) # [batch_num, edim]
+        src_kv = torch.stack(kv, dim=0) # [batch_num, edim]
+        query_ls  = torch.stack(qcls_ls, dim=0)
         
-        if len(src_kv.shape) > 1:
-            avg_a = torch.mean(src_ka, dim=0)
-            avg_v = torch.mean(src_kv, dim=0)
-            query = torch.mean(query_ls, dim=0)
-        else:
-            avg_a = src_ka
-            avg_v = src_kv
-            query = query_ls
+        avg_a = torch.mean(src_ka, dim=0)
+        avg_v = torch.mean(src_kv, dim=0)
+        query = torch.mean(query_ls, dim=0)
 
         # alpha given by equation
         tanh = nn.Tanh()
@@ -61,7 +50,10 @@ def set_rotary_matrix(args, model, AIR, device, dataloader):
         with open(os.path.join(args.exp_root, 'AIR.txt'), '+a') as file:
             file.write(f"weight for A={alpha}, weight for V={1-alpha}\n")
         
-        target_cls = alpha * avg_a + (1-alpha) * avg_v
+        normed_avg_a = avg_a / torch.norm(avg_a)
+        normed_avg_v = avg_v / torch.norm(avg_v)
+
+        target_cls = alpha * normed_avg_a + (1-alpha) * normed_avg_v
 
         v = query
 
